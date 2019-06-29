@@ -37,6 +37,8 @@ Supported codes:
 - x - hex
 - X - uppercase hex
 - b - binary
+- e - exponential
+- E - uppercase exponential
 - f - fixed point
 - F - same as f
 - % - multiply by 100, and show with fixed 'f' format precision
