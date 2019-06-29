@@ -119,10 +119,10 @@
 
     /**
      * Helper function for formatting integers of different base
-     * 
-     * @param {number|boolean} i 
-     * @param {string} padding 
-     * @param {number} base (integer) - Ex. 16 for hexadecimal 
+     *
+     * @param {number|boolean} i
+     * @param {string} padding
+     * @param {number} base (integer) - Ex. 16 for hexadecimal
      * @param {string} code For error reporting
      * @private
      */
@@ -179,13 +179,30 @@
      * Split a string by the dot and returns
      * the integer and fractional part
      *
-     * @param {string} strNum 
+     * @param {string} strNum
      *
      * @return {Array}<String> - [integerPart, fractionalPart]
      */
     function splitStrNumberByDot(strNum) {
         var split = strNum.split(".");
         return [split[0], split[1] || ""];
+    }
+
+    /**
+     * Inspects the first character of a string
+     * for a valid sign format
+     *
+     * @param {string} str
+     *
+     * @return {String|Boolean} - The extracted sign, or false
+     */
+    function extractSign(str) {
+        var signs = ['-', '+', ' ', '0'];
+        var flag = str[0];
+        if (signs.indexOf(flag) !== -1) {
+            return flag;
+        }
+        return false;
     }
 
     function _getFixedpointPadding(padding) {
@@ -293,6 +310,39 @@
         return fixedpointFormatter(p * 100, padding, true) + "%";
     }
 
+    function exponentialFormatter(e, padding) {
+        if (typeof e !== "number") {
+            throw "Can only format numbers with 'e' code, got '" + e + "' of type '" + typeof e + "'";
+        }
+        var precision = DEFAULT_FIXEDPOINT_DIGITS;
+        var leading = 0;
+        var signFlag = false;
+        if (padding) {
+            signFlag = extractSign(padding);
+            var padChar = signFlag === '0' ? signFlag : ' ';
+            var pad = signFlag === false ? padding : padding.substr(1);
+            var ret = splitStrNumberByDot(pad);
+            precision = parseInt(ret[1], 10) || precision;
+            leading = parseInt(ret[0], 10);
+        }
+        var exp = parseFloat(Math.abs(e)).toExponential(precision).split('+');
+        exp[1] = padLeft(exp[1], 2, '0');
+        var sign = '';
+        switch (signFlag) {
+            case '+':
+                sign = Math.sign(e) === -1 ? '-' : '+';
+                break;
+            case ' ':
+                sign = Math.sign(e) === -1 ? '-' : ' ';
+                break;
+            case '-':
+            default:
+                sign = Math.sign(e) === -1 ? '-' : '';
+        }
+
+        return `${sign}${padLeft(exp.join('+'), leading - sign.length, padChar)}`;
+    }
+
     FORMATTERS = {
         s: stringFormatter,
         x: function(x, padding) {
@@ -309,6 +359,10 @@
         },
         b: function(b, padding) {
             return _integerFormatter(b, padding, 2, 'b');
+        },
+        e: exponentialFormatter,
+        E: function (e, padding) {
+            return exponentialFormatter(e, padding).toUpperCase();
         },
         c: charFormatter,
         f: fixedpointFormatter,
